@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover">
+<title>Nori — Caregiver app (interactive prototype)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700&family=Hanken+Grotesk:wght@400;500;600;700&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --evergreen:#2F5D50; --evergreen-deep:#22443B;
+    --sage:#C7D9CC; --linen:#F6F1E9; --walnut:#5B5147; --walnut-soft:#7A6F62;
+    --sky:#A9C7D8; --honey:#E2B857; --clay:#C97A63; --burgundy:#9E3D39;
+    --cream:#FBF8F4; --mist:#D8D6D1;
+    --green-bg:#E4EEE6; --green-tx:#2F5D50;
+    --yellow-bg:#FBF1D6; --yellow-tx:#9A7B1E;
+    --red-bg:#F3DBD3; --red-tx:#B5563E;
+    --emerg-bg:#F1D6D5; --emerg-tx:#9E3D39;
+    --sh-sm:0 1px 2px rgba(34,68,59,.06),0 2px 8px rgba(34,68,59,.05);
+    --sh-md:0 6px 18px rgba(34,68,59,.10),0 16px 40px rgba(34,68,59,.08);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;height:100%;}
+  body{
+    background:
+      radial-gradient(900px 500px at 15% -5%, rgba(199,217,204,.5), transparent 60%),
+      radial-gradient(800px 600px at 110% 100%, rgba(169,199,216,.35), transparent 55%),
+      var(--linen);
+    font-family:'Hanken Grotesk',system-ui,sans-serif;
+    color:var(--walnut); line-height:1.5;
+    display:flex; align-items:center; justify-content:center;
+    min-height:100%; padding:26px; -webkit-font-smoothing:antialiased;
+  }
+
+  /* device frame */
+  .device{
+    width:412px; height:860px; max-height:calc(100vh - 40px);
+    background:var(--linen); border-radius:46px; position:relative;
+    box-shadow:var(--sh-md), 0 0 0 11px #1d2b26, 0 0 0 13px #2c3f39;
+    overflow:hidden; display:flex; flex-direction:column;
+  }
+  .device::before{ /* notch */
+    content:""; position:absolute; top:11px; left:50%; transform:translateX(-50%);
+    width:128px; height:26px; background:#1d2b26; border-radius:0 0 16px 16px; z-index:40;
+  }
+  .statusbar{
+    height:40px; flex:0 0 40px; display:flex; align-items:center; justify-content:space-between;
+    padding:0 26px; font-size:13px; font-weight:600; color:var(--evergreen-deep);
+    font-family:'Spline Sans Mono',monospace; z-index:30;
+  }
+  .statusbar .dots{letter-spacing:1px;}
+
+  .viewport{flex:1; position:relative; overflow:hidden;}
+  .screen{position:absolute; inset:0; display:flex; flex-direction:column; overflow:hidden;}
+
+  /* app header */
+  .appbar{
+    flex:0 0 auto; padding:8px 18px 12px; display:flex; align-items:center; gap:10px;
+    background:transparent;
+  }
+  .appbar .switch{
+    display:flex; align-items:center; gap:8px; background:var(--cream); border:1px solid var(--mist);
+    border-radius:999px; padding:5px 12px 5px 6px; cursor:pointer; box-shadow:var(--sh-sm); flex:1; min-width:0;
+  }
+  .appbar .switch .pic{width:30px;height:30px;border-radius:9px;background:var(--evergreen);color:#fff;
+    display:grid;place-items:center;font-family:'Fraunces';font-weight:600;font-size:15px;flex:0 0 auto;}
+  .appbar .switch .nm{font-weight:700;font-size:14.5px;color:var(--evergreen-deep);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .appbar .switch .nm small{display:block;font-weight:500;font-size:11px;color:var(--walnut-soft);}
+  .appbar .switch .car{margin-left:auto;color:var(--walnut-soft);font-size:12px;}
+  .iconbtn{
+    width:40px;height:40px;flex:0 0 auto;border-radius:12px;border:1px solid var(--mist);
+    background:var(--cream);display:grid;place-items:center;cursor:pointer;box-shadow:var(--sh-sm);
+    font-size:18px;position:relative;
+  }
+  .iconbtn.alert{color:var(--evergreen);}
+  .iconbtn .badge{position:absolute;top:-4px;right:-4px;background:var(--clay);color:#fff;font-size:10px;
+    font-weight:700;min-width:17px;height:17px;border-radius:9px;display:grid;place-items:center;padding:0 4px;}
+  .iconbtn.sos{background:var(--burgundy);border-color:var(--burgundy);color:#fff;font-weight:700;font-size:12px;font-family:'Spline Sans Mono';}
+
+  /* scroll body */
+  .body{flex:1; overflow-y:auto; padding:4px 18px 26px; -webkit-overflow-scrolling:touch;}
+  .body::-webkit-scrollbar{width:0;}
+
+  h1.scr{font-family:'Fraunces';font-weight:600;font-size:27px;color:var(--evergreen-deep);margin:6px 0 2px;letter-spacing:-.3px;}
+  .sub{font-size:13.5px;color:var(--walnut-soft);margin:0 0 14px;}
+  .sec-h{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--clay);margin:22px 0 9px;}
+
+  /* cards & rows */
+  .card{background:var(--cream);border:1px solid var(--mist);border-radius:18px;padding:16px;box-shadow:var(--sh-sm);margin-bottom:12px;}
+  .row{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--cream);
+    border:1px solid var(--mist);border-radius:16px;padding:14px 15px;box-shadow:var(--sh-sm);margin-bottom:10px;cursor:pointer;
+    font:inherit;color:inherit;}
+  .row:active{transform:scale(.99);}
+  .row .ic{width:38px;height:38px;border-radius:11px;flex:0 0 auto;display:grid;place-items:center;font-size:18px;background:var(--sage);}
+  .row .tx{flex:1;min-width:0;}
+  .row .tx .t{font-weight:700;font-size:15px;color:var(--evergreen-deep);}
+  .row .tx .d{font-size:12.5px;color:var(--walnut-soft);}
+  .row .car{color:var(--walnut-soft);font-size:14px;flex:0 0 auto;}
+  .row .rt{font-size:12.5px;color:var(--walnut-soft);text-align:right;flex:0 0 auto;}
+
+  /* status card */
+  .status{border-radius:20px;padding:18px;margin-bottom:14px;border:1px solid;}
+  .status .dot{font-size:12px;}
+  .status .lab{font-weight:700;font-size:17px;display:flex;align-items:center;gap:8px;}
+  .status .meta{font-size:13.5px;margin-top:3px;opacity:.9;}
+  .st-green{background:var(--green-bg);border-color:#c4dcc9;color:var(--green-tx);}
+  .st-yellow{background:var(--yellow-bg);border-color:#ecdca8;color:var(--yellow-tx);}
+  .st-red{background:var(--red-bg);border-color:#e7c2b5;color:var(--red-tx);}
+
+  /* zone chips */
+  .zone{border-radius:14px;padding:13px 15px;margin-bottom:9px;border:1px solid rgba(0,0,0,.05);}
+  .zone .zn{font-weight:700;font-size:12.5px;letter-spacing:.03em;text-transform:uppercase;margin-bottom:3px;display:flex;align-items:center;gap:7px;}
+  .zone .zd{font-size:13px;line-height:1.4;}
+  .z-green{background:var(--green-bg);} .z-green .zn{color:var(--green-tx);}
+  .z-yellow{background:var(--yellow-bg);} .z-yellow .zn{color:var(--yellow-tx);}
+  .z-red{background:var(--red-bg);} .z-red .zn{color:var(--red-tx);}
+  .z-emerg{background:var(--emerg-bg);border-color:rgba(158,61,57,.25);} .z-emerg .zn{color:var(--emerg-tx);}
+
+  .pill{display:inline-flex;align-items:center;gap:5px;background:var(--sage);color:var(--evergreen-deep);
+    border-radius:999px;padding:4px 11px;font-size:12px;font-weight:600;margin:0 6px 6px 0;}
+  .pill.warn{background:rgba(201,122,99,.18);color:#a85740;}
+  .pill.honey{background:rgba(226,184,87,.25);color:#8a6c19;}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;
+    background:var(--evergreen);color:#fff;border:none;border-radius:14px;padding:14px;
+    font:inherit;font-weight:700;font-size:15px;cursor:pointer;box-shadow:var(--sh-sm);}
+  .btn:active{transform:scale(.99);}
+  .btn.ghost{background:var(--cream);color:var(--evergreen-deep);border:1px solid var(--mist);box-shadow:none;}
+  .btn.sm{width:auto;padding:9px 14px;font-size:13px;border-radius:11px;}
+  .btn.danger{background:var(--burgundy);}
+  .btnrow{display:flex;gap:9px;}
+
+  /* segmented filter */
+  .seg{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px;}
+  .seg::-webkit-scrollbar{height:0;}
+  .seg button{flex:0 0 auto;border:1px solid var(--mist);background:var(--cream);border-radius:999px;
+    padding:7px 13px;font:inherit;font-size:12.5px;font-weight:600;color:var(--walnut-soft);cursor:pointer;}
+  .seg button.on{background:var(--evergreen);color:#fff;border-color:var(--evergreen);}
+
+  /* timeline */
+  .tl-day{font-size:12px;font-weight:700;color:var(--walnut-soft);letter-spacing:.05em;margin:16px 0 8px;}
+  .tl{position:relative;padding-left:26px;}
+  .tl::before{content:"";position:absolute;left:9px;top:4px;bottom:4px;width:2px;background:var(--mist);}
+  .tl-ev{position:relative;margin-bottom:11px;}
+  .tl-ev .node{position:absolute;left:-26px;top:3px;width:20px;height:20px;border-radius:50%;
+    background:var(--cream);border:2px solid var(--evergreen);display:grid;place-items:center;font-size:9px;}
+  .tl-ev.zy .node{border-color:var(--honey);} .tl-ev.zr .node{border-color:var(--clay);}
+  .tl-ev .ec{background:var(--cream);border:1px solid var(--mist);border-radius:14px;padding:11px 13px;box-shadow:var(--sh-sm);cursor:pointer;}
+  .tl-ev .ec .et{font-weight:700;font-size:14px;color:var(--evergreen-deep);}
+  .tl-ev .ec .ed{font-size:12.5px;color:var(--walnut-soft);}
+
+  /* meter */
+  .meter{height:11px;border-radius:7px;background:var(--mist);overflow:hidden;margin:7px 0;}
+  .meter > span{display:block;height:100%;background:linear-gradient(90deg,var(--evergreen),var(--sage));}
+
+  /* xlate */
+  .xfrom{background:#F1ECE3;border:1px dashed var(--mist);border-radius:12px;padding:11px 13px;font-size:12.5px;color:var(--walnut-soft);margin-bottom:7px;}
+  .xto{background:var(--green-bg);border:1px solid #c4dcc9;border-radius:12px;padding:11px 13px;font-size:13px;color:var(--evergreen-deep);}
+
+  /* note */
+  .note{border-left:4px solid var(--sky);background:rgba(169,199,216,.16);padding:11px 13px;border-radius:0 12px 12px 0;font-size:12.5px;margin:10px 0;}
+  .note.guard{border-left-color:var(--burgundy);background:rgba(158,61,57,.07);}
+
+  /* toggle */
+  .tog{width:44px;height:26px;border-radius:14px;background:var(--mist);position:relative;cursor:pointer;flex:0 0 auto;transition:background .2s;border:none;}
+  .tog.on{background:var(--evergreen);}
+  .tog::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .2s;}
+  .tog.on::after{left:21px;}
+
+  /* tab bar */
+  .tabbar{flex:0 0 auto;display:flex;align-items:center;justify-content:space-around;
+    padding:8px 8px calc(8px + env(safe-area-inset-bottom)); background:var(--cream);
+    border-top:1px solid var(--mist);}
+  .tab{display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;cursor:pointer;
+    font:inherit;font-size:10.5px;font-weight:600;color:var(--walnut-soft);padding:4px 10px;flex:1;}
+  .tab .ti{font-size:20px;line-height:1;}
+  .tab.on{color:var(--evergreen);}
+  .tab.add .ti{width:46px;height:46px;border-radius:16px;background:var(--evergreen);color:#fff;display:grid;place-items:center;
+    font-size:26px;box-shadow:var(--sh-sm);margin-top:-18px;border:3px solid var(--linen);}
+  .tab.add{color:var(--evergreen);}
+
+  /* sheet / modal */
+  .scrim{position:absolute;inset:0;background:rgba(34,68,59,.4);z-index:60;display:flex;align-items:flex-end;
+    opacity:0;pointer-events:none;transition:opacity .22s;}
+  .scrim.show{opacity:1;pointer-events:auto;}
+  .sheet{width:100%;background:var(--linen);border-radius:26px 26px 0 0;padding:10px 18px 26px;
+    transform:translateY(100%);transition:transform .26s;max-height:88%;overflow-y:auto;}
+  .scrim.show .sheet{transform:translateY(0);}
+  .sheet .grab{width:42px;height:5px;border-radius:3px;background:var(--mist);margin:4px auto 12px;}
+  .sheet h3{font-family:'Fraunces';font-size:21px;color:var(--evergreen-deep);margin:0 0 4px;}
+
+  /* chips select */
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0;}
+  .chip{border:1.5px solid var(--mist);background:var(--cream);border-radius:12px;padding:9px 13px;font:inherit;
+    font-size:13px;font-weight:600;color:var(--walnut);cursor:pointer;}
+  .chip.on{border-color:var(--evergreen);background:var(--sage);color:var(--evergreen-deep);}
+
+  /* assistant */
+  .chat{display:flex;flex-direction:column;gap:10px;}
+  .msg{max-width:88%;padding:11px 14px;border-radius:16px;font-size:13.5px;line-height:1.45;}
+  .msg.you{align-self:flex-end;background:var(--evergreen);color:#fff;border-bottom-right-radius:5px;}
+  .msg.nori{align-self:flex-start;background:var(--cream);border:1px solid var(--mist);border-bottom-left-radius:5px;}
+  .msg.nori .src{margin-top:8px;display:flex;flex-wrap:wrap;gap:5px;}
+  .srcchip{font-size:10.5px;background:rgba(169,199,216,.25);color:#2c5468;border-radius:7px;padding:2px 7px;font-weight:600;}
+  .disc{font-size:11px;color:var(--walnut-soft);background:rgba(158,61,57,.06);border:1px solid rgba(158,61,57,.15);
+    border-radius:10px;padding:8px 11px;margin-bottom:10px;display:flex;gap:7px;align-items:flex-start;}
+  .composer{display:flex;gap:8px;align-items:center;padding-top:10px;}
+  .composer input{flex:1;border:1px solid var(--mist);background:var(--cream);border-radius:13px;padding:12px 14px;font:inherit;font-size:14px;}
+  .composer input:focus{outline:none;border-color:var(--evergreen);}
+  .composer .send{width:44px;height:44px;flex:0 0 auto;border-radius:13px;border:none;background:var(--evergreen);color:#fff;font-size:18px;cursor:pointer;}
+
+  /* splash & onboarding & emergency = full overlays */
+  .full{position:absolute;inset:0;z-index:70;display:flex;flex-direction:column;}
+  .splash{background:radial-gradient(700px 400px at 70% 0%,rgba(169,199,216,.3),transparent 60%),var(--evergreen);
+    color:var(--linen);align-items:center;justify-content:center;text-align:center;padding:40px;}
+  .splash .logo{width:104px;height:104px;margin-bottom:22px;}
+  .splash h1{font-family:'Fraunces';font-weight:600;font-size:52px;margin:0;color:#fff;}
+  .splash .tag{font-family:'Fraunces';font-style:italic;color:var(--sage);font-size:18px;margin:8px 0 30px;}
+  .splash .btn{background:var(--honey);color:#3c2f08;max-width:240px;}
+
+  .emerg{background:var(--burgundy);color:#fff;}
+  .emerg .ehead{padding:16px 20px 12px;display:flex;align-items:center;justify-content:space-between;}
+  .emerg .ehead .ti{font-family:'Spline Sans Mono';font-weight:600;letter-spacing:.1em;font-size:15px;display:flex;gap:9px;align-items:center;}
+  .emerg .ehead .x{background:rgba(255,255,255,.18);border:none;color:#fff;width:34px;height:34px;border-radius:10px;font-size:18px;cursor:pointer;}
+  .emerg .ebody{flex:1;overflow-y:auto;padding:4px 20px 26px;}
+  .emerg .ecard{background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.2);border-radius:16px;padding:14px 16px;margin-bottom:11px;}
+  .emerg .elab{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#f0c9c4;font-weight:700;margin-bottom:4px;}
+  .emerg .ebig{font-size:21px;font-weight:700;font-family:'Fraunces';}
+  .emerg .allergy{background:#fff;color:var(--burgundy);}
+  .emerg .allergy .elab{color:var(--burgundy);opacity:.8;}
+  .emerg .call{display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.12);
+    border-radius:12px;padding:11px 14px;margin-bottom:8px;font-size:14px;}
+  .emerg .call .ph{background:#fff;color:var(--burgundy);border-radius:9px;padding:6px 10px;font-weight:700;font-size:12px;}
+
+  /* onboarding */
+  .onb{background:var(--linen);padding:0;}
+  .onb .top{padding:18px 22px 0;}
+  .onb .body{padding:18px 22px 22px;}
+  .onb .step{font-family:'Spline Sans Mono';font-size:12px;color:var(--clay);letter-spacing:.1em;}
+  .onb h2{font-family:'Fraunces';font-size:26px;color:var(--evergreen-deep);margin:6px 0 4px;line-height:1.15;}
+  .inp{width:100%;border:1px solid var(--mist);background:var(--cream);border-radius:13px;padding:13px 14px;font:inherit;font-size:15px;margin-bottom:10px;}
+  .inp:focus{outline:none;border-color:var(--evergreen);}
+  .opt{display:flex;align-items:center;gap:12px;border:1.5px solid var(--mist);background:var(--cream);border-radius:14px;
+    padding:14px;margin-bottom:9px;cursor:pointer;font:inherit;width:100%;text-align:left;}
+  .opt.on{border-color:var(--evergreen);background:var(--sage);}
+  .opt .oi{font-size:20px;}
+  .opt .ot{font-weight:600;font-size:14.5px;color:var(--evergreen-deep);}
+
+  .empty{text-align:center;color:var(--walnut-soft);font-size:13px;padding:30px 10px;}
+  .pullhint{text-align:center;font-size:12px;font-weight:600;color:var(--walnut-soft);padding:2px 0 12px;transition:color .15s,transform .15s;}
+  .pullhint.ready{color:var(--evergreen);transform:translateY(3px);}
+  .credit{position:fixed;bottom:8px;left:0;right:0;text-align:center;font-size:11px;color:var(--walnut-soft);z-index:1;}
+
+  @media(max-width:640px){
+    body{padding:0;background:var(--linen);}
+    .device{width:100vw;height:100vh;max-height:100vh;border-radius:0;box-shadow:none;}
+    .device::before{display:none;}
+    .statusbar{display:none;}
+    .credit{display:none;}
+  }
+  :focus-visible{outline:3px solid var(--honey);outline-offset:2px;}
+  @media(prefers-reduced-motion:reduce){*{transition:none!important;}}
+</style>
+</head>
+<body>
+  <div class="device" id="device">
+    <div class="statusbar"><span>9:41</span><span class="dots">● ● ●  ▭</span></div>
+    <div class="viewport" id="viewport">
+      <!-- screens render here -->
+    </div>
+  </div>
+  <div class="credit">Nori · interactive prototype — tap around: switch tabs, log a symptom (+), decode a bill, open Emergency, ask Nori.</div>
+
+<script>
+/* ============ NORI APP PROTOTYPE ============ */
+const VP = document.getElementById('viewport');
+
+/* ---- inline heart-leaf logo ---- */
+function logo(size, opts={}){
+  const leafC = opts.leaf || '#FBF8F4';
+  const veinC = opts.vein || '#2F5D50';
+  const bg = opts.bg;
+  const bud = opts.bud===false ? '' : '<circle cx="50" cy="40.4" r="2.8" fill="#E2B857"/>';
+  const rect = bg ? `<rect x="2" y="2" width="96" height="96" rx="24" fill="${bg}"/>` : '';
+  return `<svg viewBox="0 0 100 100" width="${size}" height="${size}" aria-label="Nori" role="img">
+    ${rect}
+    <path d="M 50 84.5 C 26.6 60.5 22.4 36.5 36.2 33.2 C 44 30.8 50 39.2 50 45.2 C 50 39.2 56 30.8 63.8 33.2 C 77.6 36.5 73.4 60.5 50 84.5 Z" fill="${leafC}"/>
+    <g stroke="${veinC}" stroke-width="3.4" stroke-linecap="round" fill="none">
+      <path d="M 50 41 L 50 80.6"/><path d="M 50 52.4 L 62.6 41"/><path d="M 50 52.4 L 37.4 41"/>
+      <path d="M 50 65 L 60.2 56.6"/><path d="M 50 65 L 39.8 56.6"/>
+    </g>${bud}
+  </svg>`;
+}
+
+/* ============ DATA ============ */
+const PLAYBOOKS = {
+  chf:{ name:'Heart failure',
+    overview:'The heart isn’t pumping as strongly as it should, so fluid can build up. Day to day, it’s mostly about watching for that fluid and keeping medication and salt in balance.',
+    monitor:['Daily weight — same time, same scale','Swelling in ankles, legs, or belly','Shortness of breath, especially lying down','Energy and how many pillows are needed to sleep'],
+    zones:{green:'Stable weight, breathing comfortably, usual energy.',
+      yellow:'Weight up 2–3 lb in a few days, more swelling, or mild new breathlessness. Keep watching — consider calling the team.',
+      red:'Weight up 5 lb in a week, breathless at rest or lying flat, or marked new swelling. Call the care team today.',
+      emergency:'Severe breathlessness, chest pain, blue lips, or fainting. Call 911.'},
+    questions:['What weight gain should make me call?','Which medicine do I adjust if the weight climbs?','What’s the daily salt limit?'] },
+  dem:{ name:'Early dementia',
+    overview:'Memory and thinking change gradually. Care focuses on routine, safety at home, and noticing meaningful changes early.',
+    monitor:['New confusion or disorientation','Changes in sleep or mood','Wandering or safety risks','Managing daily tasks'],
+    zones:{green:'Usual baseline; familiar routines intact.',
+      yellow:'More forgetful than usual, mild new confusion, or sleep changes. Note it and mention it at the next visit.',
+      red:'Sudden confusion, not recognizing familiar people, or new agitation. Call the care team today.',
+      emergency:'Sudden severe confusion with fever, a fall with injury, or unable to wake. Call 911.'},
+    questions:['Is this change expected or worth a closer look?','How do we keep the home safe?','What support is there for me as the caregiver?'] },
+  htn:{ name:'Hypertension',
+    overview:'Blood pressure runs higher than ideal, which over time strains the heart and vessels. Management is medication, salt, and regular checks.',
+    monitor:['Home blood-pressure readings','Headaches or dizziness','Taking medication consistently'],
+    zones:{green:'Readings near the target range.',
+      yellow:'Readings running higher than usual, or occasional dizziness. Keep a log.',
+      red:'Consistently high readings or a severe headache. Call the care team today.',
+      emergency:'A very high reading with chest pain, vision change, or trouble speaking. Call 911.'},
+    questions:['What’s our target blood pressure?','What reading should make me call?','Best time of day to check?'] },
+  dia:{ name:'Type 2 diabetes',
+    overview:'Blood sugar runs high. Management is medication, food, movement, and regular checks to avoid lows and highs.',
+    monitor:['Blood-sugar readings','Signs of a low (shaky, sweaty, confused)','Foot care','Energy and thirst'],
+    zones:{green:'Readings in the agreed range; feeling well.',
+      yellow:'Readings running high or low more often than usual. Keep a log and mention it.',
+      red:'Repeated very high readings, or a low that’s hard to bring back up. Call the care team today.',
+      emergency:'Unresponsive, seizure, or confusion that won’t clear with sugar. Call 911.'},
+    questions:['What range are we aiming for?','What do I do for a low?','How often should we check?'] },
+};
+
+function mk(){ return {
+  robert:{ id:'robert', name:'Robert Delgado', short:'Dad', initials:'R', dob:'Apr 11, 1947', age:78, sex:'M',
+    relation:'Father', code:'Full code', insurance:'Blue Cross · member ····1234',
+    deductible:{met:1240,total:3000},
+    status:{zone:'yellow', label:'Worth watching', meta:'Weight up 2 lb this week · 2 things need you'},
+    allergies:['Penicillin'],
+    conditions:[{id:'chf',pb:'chf',since:'2021'},{id:'dem',pb:'dem',since:'2023'},{id:'htn',pb:'htn',since:'2016'}],
+    meds:[
+      {id:'furo',name:'Furosemide',dose:'40 mg',sched:'1 tablet · morning',purpose:'Removes extra fluid (for swelling & breathing)',refill:4,taken:false,remind:true,interact:'Avoid NSAIDs like ibuprofen — they can blunt its effect.'},
+      {id:'lis',name:'Lisinopril',dose:'10 mg',sched:'1 tablet · morning',purpose:'Lowers blood pressure, eases the heart’s workload',refill:21,taken:false,remind:true},
+      {id:'met',name:'Metoprolol',dose:'25 mg',sched:'twice daily',purpose:'Slows the heart rate and lowers blood pressure',refill:12,taken:false,remind:false},
+      {id:'don',name:'Donepezil',dose:'5 mg',sched:'1 tablet · evening',purpose:'Supports memory and thinking',refill:9,taken:false,remind:true},
+      {id:'ator',name:'Atorvastatin',dose:'20 mg',sched:'1 tablet · evening',purpose:'Lowers cholesterol',refill:30,taken:false,remind:false},
+      {id:'asa',name:'Aspirin',dose:'81 mg',sched:'1 tablet · morning',purpose:'Helps protect the heart',refill:30,taken:false,remind:false},
+    ],
+    team:[
+      {name:'Maria (you)',role:'Organizer',rel:'Daughter',init:'M',you:true},
+      {name:'Tomás',role:'Contributor',rel:'Son',init:'T'},
+      {name:'Elena',role:'Viewer',rel:'Daughter',init:'E'},
+      {name:'Rosa',role:'Limited · aide',rel:'Home aide',init:'R'},
+      {name:'Dr. Amara Osei',role:'Cardiology',rel:'Care team',init:'O',phone:true},
+      {name:'Dr. Ben Reyes',role:'Primary care',rel:'Care team',init:'B',phone:true},
+      {name:'Dr. Lena Cho',role:'Neurology',rel:'Care team',init:'C',phone:true},
+    ],
+    appts:[
+      {id:'a1',spec:'Cardiology',who:'Dr. Amara Osei',when:'Thu · 9:00 AM',date:'Mar 16',mode:'In person',ride:'Maria',
+        prep:['Is the 2 lb weight gain something to act on now?','Should the water pill (Furosemide) be adjusted?','What weight should make me call before the next visit?']},
+      {id:'a2',spec:'Neurology',who:'Dr. Lena Cho',when:'Tue · 2:30 PM',date:'Mar 22',mode:'Telehealth',ride:null,
+        prep:['Any change to the memory medication?','What signs of decline should I track at home?']},
+    ],
+    followups:1,
+    bills:[
+      {id:'b1',from:'St. Mary’s Hospital',amt:142,status:'review',date:'Mar 9',decoded:false,
+        raw:'Coinsurance adjustment — patient responsibility $142.00',
+        plain:'Your insurance covered 80% of this visit. You owe the remaining 20% — $142. This lines up with the Mar 12 visit and isn’t a duplicate.'},
+      {id:'b2',from:'Quest Diagnostics',amt:38,status:'review',date:'Mar 10',decoded:false,
+        raw:'Applied to deductible — $38.00',
+        plain:'This $38 counts toward your yearly deductible. Nothing was “covered” yet because the deductible isn’t met — but you’re getting closer.'},
+      {id:'b3',from:'Cardiology copay',amt:25,status:'paid',date:'Mar 1'},
+    ],
+    tasks:[
+      {id:'t1',title:'File insurance appeal',who:'Tomás',due:'Fri',status:'in_progress',linked:'Denied MRI claim'},
+      {id:'t2',title:'Pick up prescription',who:'Elena',due:'Today',status:'open',linked:'Donepezil refill'},
+      {id:'t3',title:'Refill Furosemide',who:'Maria (you)',due:'in 4 days',status:'open',linked:'Furosemide 40 mg'},
+    ],
+    docs:9,
+    timeline:[
+      {day:'Today',items:[{time:'9:12 AM',type:'symptom',zone:'yellow',title:'Symptom logged',desc:'Weight +2 lb · mild ankle swelling'}]},
+      {day:'Mar 12',items:[
+        {type:'appt',title:'Cardiology visit',desc:'Dr. Osei · after-visit summary attached'},
+        {type:'lab',zone:'yellow',title:'Lab: BNP elevated',desc:'A marker that can rise when fluid builds up'}]},
+      {day:'Mar 9',items:[
+        {type:'bill',title:'Bill posted — $142',desc:'St. Mary’s Hospital'},
+        {type:'med',title:'Furosemide increased',desc:'20 mg → 40 mg (Dr. Osei)'}]},
+      {day:'Feb 28',items:[{type:'appt',title:'Telehealth — Neurology',desc:'Dr. Cho · stable'}]},
+      {day:'Feb 20',items:[{type:'imm',title:'Flu vaccine',desc:'Maplewood Pharmacy'}]},
+      {day:'Feb 2',items:[{type:'hosp',zone:'red',title:'Hospitalized — 2 days',desc:'Heart-failure flare · fluid overload'}]},
+    ],
+  },
+  helen:{ id:'helen', name:'Helen Delgado', short:'Mom', initials:'H', dob:'Sep 2, 1950', age:75, sex:'F',
+    relation:'Mother', code:'Full code', insurance:'Medicare + Aetna supp.',
+    deductible:{met:300,total:1500},
+    status:{zone:'green', label:'On track', meta:'Nothing needs you right now'},
+    allergies:['Sulfa drugs'],
+    conditions:[{id:'dia',pb:'dia',since:'2018'},{id:'htn',pb:'htn',since:'2019'}],
+    meds:[
+      {id:'met2',name:'Metformin',dose:'500 mg',sched:'twice daily',purpose:'Lowers blood sugar',refill:18,taken:false,remind:true},
+      {id:'aml',name:'Amlodipine',dose:'5 mg',sched:'1 tablet · morning',purpose:'Lowers blood pressure',refill:25,taken:false,remind:false},
+    ],
+    team:[{name:'Maria (you)',role:'Organizer',rel:'Daughter',init:'M',you:true},
+      {name:'Dr. Priya Nair',role:'Primary care',rel:'Care team',init:'N',phone:true}],
+    appts:[{id:'h1',spec:'Primary care',who:'Dr. Priya Nair',when:'Mon · 11:00 AM',date:'Mar 27',mode:'In person',ride:'Maria',prep:['Review the latest A1C','Refill metformin']}],
+    followups:0,
+    bills:[{id:'hb1',from:'Lab copay',amt:15,status:'paid',date:'Mar 4'}],
+    tasks:[{id:'ht1',title:'Schedule eye exam',who:'Maria (you)',due:'this month',status:'open',linked:'Diabetes care'}],
+    docs:3,
+    timeline:[
+      {day:'Mar 4',items:[{type:'lab',title:'Lab: A1C 6.8',desc:'In the agreed range'}]},
+      {day:'Feb 14',items:[{type:'appt',title:'Primary care visit',desc:'Dr. Nair · stable'}]},
+    ],
+  },
+  };
+}
+
+let DB = mk();
+let cur='robert', view='home', overlay='splash', param=null, tlFilter='all', onbStep=1;
+let chat=[];
+const P=()=>DB[cur];
+const TYPEI={symptom:'📝',appt:'🩺',lab:'🧪',bill:'💲',med:'💊',imm:'💉',hosp:'🏥',insurance:'🛡️'};
+
+/* ============ ROUTER / PAINT ============ */
+function paint(){
+  if(overlay==='splash'){ VP.innerHTML=splash(); return; }
+  if(overlay==='emergency'){ VP.innerHTML=emergency(); return; }
+  if(overlay==='onboarding'){ VP.innerHTML=onboarding(); return; }
+  VP.innerHTML =
+    `<div class="screen">${appbar()}<div class="body" id="body">${viewBody()}</div>${tabbar()}</div>` +
+    `<div class="scrim" id="scrim" onclick="if(event.target===this)closeSheet()"><div class="sheet" id="sheet"></div></div>`;
+  if(view==='notifications') attachPullBack();
+}
+function appbar(){ const p=P();
+  return `<div class="appbar">
+    <button class="switch" onclick="openSwitcher()" aria-label="Switch patient">
+      <div class="pic">${p.initials}</div>
+      <div class="nm">${p.short}<small>${p.name} · ${p.age}</small></div>
+      <span class="car">▾</span>
+    </button>
+    <button class="iconbtn alert" onclick="openNotifs()" aria-label="Notifications">🔔<span class="badge">${notifItems(p).length}</span></button>
+    <button class="iconbtn sos" onclick="openEmergency()" aria-label="Emergency mode">SOS</button>
+  </div>`;
+}
+function tabbar(){
+  const map={home:'home',timeline:'timeline',care:'care'};
+  const act = map[view] || (['more','overview','billing','meds','appts','apptDetail','settings','conditions','playbook','assistant','billDetail'].includes(view)?'more':'');
+  const t=(id,ic,lb,fn,cls='')=>`<button class="tab ${cls} ${act===id?'on':''}" onclick="${fn}"><span class="ti">${ic}</span>${lb}</button>`;
+  return `<div class="tabbar">
+    ${t('home','🏠','Home',"switchTab('home')")}
+    ${t('timeline','🕒','Timeline',"switchTab('timeline')")}
+    ${t('','＋','',"openAdd()",'add')}
+    ${t('care','👪','Care',"switchTab('care')")}
+    ${t('more','⋯','More',"switchTab('more')")}
+  </div>`;
+}
+function switchTab(t){ view=t; tlFilter='all'; paint(); document.getElementById('body').scrollTop=0; }
+function nav(v,pp){ view=v; param=pp; paint(); const b=document.getElementById('body'); if(b)b.scrollTop=0; }
+
+/* ---- notifications ---- */
+let notifReturn='home';
+function notifItems(p){ const n=[];
+  const lm=p.meds.filter(m=>m.refill<=14).sort((a,b)=>a.refill-b.refill)[0];
+  if(lm) n.push({ic:'⏰',zone:lm.refill<=7?'yellow':null,t:`${lm.name} refill coming up`,d:`Due in ${lm.refill} days · tap to manage`,time:'2h',fn:"nav('meds')"});
+  const rb=p.bills.find(b=>b.status==='review');
+  if(rb) n.push({ic:'💲',t:`New bill from ${rb.from}`,d:`$${rb.amt} · needs review`,time:'1d',fn:"nav('billing')"});
+  if(p.status.zone!=='green') n.push({ic:'📈',zone:p.status.zone,t:p.status.label,d:p.status.meta,time:'Today',fn:"switchTab('timeline')"});
+  const ap=p.appts[0];
+  if(ap) n.push({ic:'🗓️',t:`Upcoming: ${ap.spec}`,d:`${ap.who} · ${ap.when}`,time:'2d',fn:`nav('apptDetail','${ap.id}')`});
+  const ip=p.tasks.find(t=>t.status==='in_progress');
+  if(ip) n.push({ic:'👪',t:`${ip.who} started a task`,d:`“${ip.title}”`,time:'3d',fn:"switchTab('care')"});
+  if(p.id==='robert') n.push({ic:'🧪',zone:'yellow',t:'New lab result',d:'BNP elevated · added to timeline',time:'Mar 12',fn:"switchTab('timeline')"});
+  return n;
+}
+function notifsV(){ const items=notifItems(P());
+  const dot=(z)=> z?`background:var(--${z==='yellow'?'yellow-bg':'red-bg'})`:'';
+  return `<div class="pullhint" id="pullhint">⌃&nbsp; Scroll up to go back</div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:2px">
+      <button class="btn ghost sm" onclick="closeNotifs()" aria-label="Back">‹ Back</button>
+      <h1 class="scr" style="margin:0;flex:1">Notifications</h1>
+    </div>
+    <p class="sub">Tap any item to jump straight to it.</p>
+    ${items.map(it=>`<button class="row" onclick="${it.fn}">
+      <div class="ic" style="${dot(it.zone)}">${it.ic}</div>
+      <div class="tx"><div class="t">${it.t}</div><div class="d">${it.d}</div></div>
+      <span class="rt">${it.time}</span></button>`).join('')}
+    <div class="empty" style="padding:18px 10px 6px">You’re all caught up.</div>`;
+}
+function openNotifs(){ if(view!=='notifications') notifReturn=view; nav('notifications'); }
+function closeNotifs(){ const v=notifReturn||'home';
+  if(['home','timeline','care','more'].includes(v)) switchTab(v); else nav(v); }
+function attachPullBack(){ const b=document.getElementById('body'); if(!b) return;
+  let acc=0, startY=null;
+  b.addEventListener('wheel',function(e){
+    if(view!=='notifications') return;
+    if(b.scrollTop<=0 && e.deltaY<0){ acc+=-e.deltaY; flagHint(true); if(acc>55){ acc=0; flagHint(false); closeNotifs(); } }
+    else { acc=0; flagHint(false); }
+  },{passive:true});
+  b.addEventListener('touchstart',function(e){ startY=e.touches[0].clientY; },{passive:true});
+  b.addEventListener('touchmove',function(e){
+    if(view!=='notifications'||startY===null) return;
+    const dy=e.touches[0].clientY-startY;
+    if(b.scrollTop<=0 && dy>14) flagHint(true);
+    if(b.scrollTop<=0 && dy>70){ startY=null; flagHint(false); closeNotifs(); }
+  },{passive:true});
+  b.addEventListener('touchend',function(){ startY=null; flagHint(false); },{passive:true});
+}
+function flagHint(on){ const h=document.getElementById('pullhint'); if(h) h.classList.toggle('ready',!!on); }
+
+/* ============ VIEWS ============ */
+function viewBody(){
+  switch(view){
+    case 'home': return homeV();
+    case 'timeline': return timelineV();
+    case 'care': return careV();
+    case 'more': return moreV();
+    case 'overview': return overviewV();
+    case 'conditions': return conditionsV();
+    case 'playbook': return playbookV();
+    case 'billing': return billingV();
+    case 'meds': return medsV();
+    case 'appts': return apptsV();
+    case 'apptDetail': return apptDetailV();
+    case 'assistant': return assistantV();
+    case 'notifications': return notifsV();
+    case 'settings': return settingsV();
+    default: return homeV();
+  }
+}
+
+function homeV(){ const p=P(), s=p.status;
+  const needs=[];
+  const lowmed=p.meds.filter(m=>m.refill<=7).sort((a,b)=>a.refill-b.refill)[0];
+  if(lowmed) needs.push({ic:'⏰',t:`${lowmed.name} refill`,d:`Due in ${lowmed.refill} day${lowmed.refill===1?'':'s'}`,fn:"nav('meds')"});
+  const rb=p.bills.find(b=>b.status==='review');
+  if(rb) needs.push({ic:'💲',t:`Bill from ${rb.from.split(' ')[0]}`,d:`$${rb.amt} · review`,fn:"nav('billing')"});
+  const ap=p.appts[0];
+  const me=((p.team.find(t=>t.you)||{}).name||'').split(' ')[0]||'there';
+  return `<h1 class="scr">Good morning, ${me}</h1>
+    <div class="status st-${s.zone}"><div class="lab"><span class="dot">●</span>${s.label}</div><div class="meta">${s.meta}</div></div>
+    ${needs.length?`<div class="sec-h">Needs attention</div>`+needs.map(n=>row(n.ic,n.t,n.d,n.fn)).join(''):''}
+    <div class="sec-h">Up next</div>
+    ${ap?row('🩺',`${ap.spec} · ${ap.who.split(' ').slice(0,2).join(' ')}`,`${ap.when} · ${ap.mode}`,`nav('apptDetail','${ap.id}')`):`<div class="empty">No upcoming appointments.</div>`}
+    <button class="row" style="background:var(--evergreen);border-color:var(--evergreen);margin-top:6px" onclick="nav('assistant')">
+      <div class="ic" style="background:rgba(255,255,255,.16)">${logo(22,{leaf:'#fff',vein:'#2F5D50',bud:false})}</div>
+      <div class="tx"><div class="t" style="color:#fff">Ask Nori</div><div class="d" style="color:var(--sage)">Bills, prep, what to watch for…</div></div>
+      <span class="car" style="color:#fff">›</span>
+    </button>`;
+}
+function row(ic,t,d,fn,right=''){
+  return `<button class="row" onclick="${fn}"><div class="ic">${ic}</div>
+    <div class="tx"><div class="t">${t}</div><div class="d">${d}</div></div>
+    ${right?`<span class="rt">${right}</span>`:''}<span class="car">›</span></button>`;
+}
+
+function timelineV(){ const p=P();
+  const filt=tlFilter, fmap={all:null,appt:'appt',lab:'lab',med:'med',bill:'bill',symptom:'symptom'};
+  const segs=[['all','All'],['appt','Visits'],['lab','Labs'],['med','Meds'],['bill','Bills'],['symptom','Symptoms']];
+  let html=`<h1 class="scr">Timeline</h1><p class="sub">Everything that happens to ${p.short}, in one place.</p>
+    <div class="seg">${segs.map(s=>`<button class="${filt===s[0]?'on':''}" onclick="setFilter('${s[0]}')">${s[1]}</button>`).join('')}</div>`;
+  let any=false;
+  p.timeline.forEach(g=>{
+    const items=g.items.filter(it=> filt==='all'||it.type===fmap[filt]);
+    if(!items.length) return; any=true;
+    html+=`<div class="tl-day">${g.day}</div><div class="tl">`;
+    items.forEach(it=>{ const zc=it.zone==='yellow'?'zy':it.zone==='red'?'zr':'';
+      html+=`<div class="tl-ev ${zc}"><div class="node">${TYPEI[it.type]||'●'}</div>
+        <div class="ec"><div class="et">${it.title}</div><div class="ed">${it.time?it.time+' · ':''}${it.desc}</div></div></div>`;});
+    html+=`</div>`;
+  });
+  if(!any) html+=`<div class="empty">Nothing of this type yet.</div>`;
+  return html;
+}
+function setFilter(f){ tlFilter=f; document.getElementById('body').innerHTML=timelineV(); }
+
+function careV(){ const p=P();
+  let html=`<h1 class="scr">Care team</h1><p class="sub">Divide the work. Everyone sees what they’re responsible for.</p>
+    <div class="sec-h">People</div>`;
+  p.team.forEach(m=>{ html+=`<div class="row" style="cursor:default">
+    <div class="ic" style="background:${m.you?'var(--evergreen)':'var(--sage)'};color:${m.you?'#fff':'var(--evergreen-deep)'};font-family:Fraunces;font-weight:600">${m.init}</div>
+    <div class="tx"><div class="t">${m.name}</div><div class="d">${m.role} · ${m.rel}</div></div>
+    ${m.phone?`<span class="ph-call" onclick="toast('Calling ${m.name}…')" style="background:var(--sage);border-radius:9px;padding:6px 10px;font-size:12px;font-weight:700;color:var(--evergreen-deep);cursor:pointer">📞</span>`:''}</div>`;});
+  html+=`<button class="btn ghost sm" style="width:100%;margin-top:2px" onclick="toast('Invite by phone or email (demo)')">+ Invite someone</button>`;
+  html+=`<div class="sec-h">Open tasks</div>`;
+  const open=p.tasks.filter(t=>t.status!=='done');
+  if(!open.length) html+=`<div class="empty">No open tasks. Nicely done.</div>`;
+  open.forEach(t=>{ const st=t.status==='in_progress'?'In progress':'To do';
+    html+=`<div class="row" style="cursor:default"><div class="ic">${t.status==='in_progress'?'⏳':'☐'}</div>
+      <div class="tx"><div class="t">${t.title}</div><div class="d">→ ${t.who} · due ${t.due} · ${t.linked}</div></div>
+      <button class="btn ghost sm" onclick="advance('${t.id}')">${t.status==='open'?'Start':'Done'}</button></div>`;});
+  html+=`<div class="sec-h">Activity</div><div class="note">Tomás started “File insurance appeal.” · Maria set a refill reminder. · Rosa logged a visit yesterday.</div>`;
+  return html;
+}
+function advance(id){ const t=P().tasks.find(x=>x.id===id); if(!t)return;
+  t.status = t.status==='open'?'in_progress':'done';
+  if(t.status==='done') toast('Task completed — logged to activity');
+  document.getElementById('body').innerHTML=careV();
+}
+
+function moreV(){
+  const items=[['🗂️','Patient overview','The full profile','nav(\'overview\')'],
+    ['💲','Billing','Bills, claims & deductible','nav(\'billing\')'],
+    ['💊','Medications','Doses, refills & history','nav(\'meds\')'],
+    ['🗓️','Appointments','Visits & follow-ups','nav(\'appts\')'],
+    ['👪','Care team','People & tasks','switchTab(\'care\')'],
+    ['⚙️','Settings & privacy','Roles, consent, audit','nav(\'settings\')'],
+    ['✨','Replay onboarding','See how setup works','startOnboarding()'],
+    ['🌿','About Nori','The logo & brand','toast(\'Nori — Healthcare, organized for those who care.\')']];
+  return `<h1 class="scr">More</h1>`+items.map(i=>row(i[0],i[1],i[2],i[3])).join('');
+}
+
+function overviewV(){ const p=P();
+  const r=(ic,t,n,fn)=>row(ic,t,'',fn,n);
+  return `<button class="btn ghost sm" onclick="switchTab('home')" style="margin-bottom:8px">‹ Home</button>
+    <h1 class="scr">${p.name}</h1><p class="sub">Age ${p.age} · ${p.relation} · ${p.code}</p>
+    ${r('🫀','Conditions',p.conditions.length,"nav('conditions')")}
+    <button class="row" onclick="nav('conditions')" style="border-color:rgba(201,122,99,.4);background:rgba(201,122,99,.08)"><div class="ic" style="background:rgba(201,122,99,.2)">⚠️</div><div class="tx"><div class="t">Allergies</div><div class="d">${p.allergies.join(', ')}</div></div><span class="car">›</span></button>
+    ${r('💊','Medications',p.meds.length,"nav('meds')")}
+    ${r('👪','Care team',p.team.length,"switchTab('care')")}
+    ${r('🛡️','Insurance',p.insurance.split('·')[0],"toast('"+p.insurance+"')")}
+    ${r('🏥','Hospitalizations',1,"nav('timeline')")}
+    ${r('💉','Immunizations','✓',"nav('timeline')")}
+    ${r('📄','Documents',p.docs,"toast('Document vault (demo)')")}
+    <button class="btn" style="margin-top:6px" onclick="summarySheet()">Generate health summary</button>`;
+}
+function conditionsV(){ const p=P();
+  return `<button class="btn ghost sm" onclick="nav('overview')" style="margin-bottom:8px">‹ Overview</button>
+    <h1 class="scr">Conditions</h1><p class="sub">Tap any condition for a caregiver playbook.</p>
+    ${p.conditions.map(c=>{const pb=PLAYBOOKS[c.pb];return row('🫀',pb.name,'Since '+c.since,`nav('playbook','${c.pb}')`,'Playbook');}).join('')}
+    <div class="sec-h">Allergies</div>
+    <div class="card" style="border-color:rgba(201,122,99,.4)"><strong style="color:#a85740">⚠️ ${p.allergies.join(', ')}</strong></div>`;
+}
+function playbookV(){ const pb=PLAYBOOKS[param];
+  return `<button class="btn ghost sm" onclick="nav('conditions')" style="margin-bottom:8px">‹ Conditions</button>
+    <h1 class="scr">${pb.name}</h1>
+    <div class="card"><div class="sec-h" style="margin-top:0">Overview</div>${pb.overview}</div>
+    <div class="sec-h">What to monitor</div>
+    <div class="card">${pb.monitor.map(m=>`<div style="padding:6px 0">• ${m}</div>`).join('')}</div>
+    <div class="sec-h">Care zones</div>
+    <div class="zone z-green"><div class="zn">● Green — on track</div><div class="zd">${pb.zones.green}</div></div>
+    <div class="zone z-yellow"><div class="zn">● Yellow — worth watching</div><div class="zd">${pb.zones.yellow}</div></div>
+    <div class="zone z-red"><div class="zn">● Red — act today</div><div class="zd">${pb.zones.red}</div></div>
+    <div class="zone z-emerg"><div class="zn">⚠ Emergency — call 911</div><div class="zd">${pb.zones.emergency}</div></div>
+    <div class="sec-h">Questions to ask the provider</div>
+    <div class="card">${pb.questions.map(q=>`<div style="padding:6px 0">“${q}”</div>`).join('')}</div>`;
+}
+
+function billingV(){ const p=P(), d=p.deductible, pct=Math.round(d.met/d.total*100);
+  const review=p.bills.filter(b=>b.status==='review'), paid=p.bills.filter(b=>b.status==='paid');
+  let html=`<button class="btn ghost sm" onclick="switchTab('more')" style="margin-bottom:8px">‹ More</button>
+    <h1 class="scr">Billing</h1>
+    <div class="card"><div class="sec-h" style="margin-top:0">Out-of-pocket this year</div>
+      <div style="font-family:Fraunces;font-size:24px;color:var(--evergreen-deep)">$${d.met.toLocaleString()} <span style="font-size:14px;color:var(--walnut-soft)">of $${d.total.toLocaleString()} deductible</span></div>
+      <div class="meter"><span style="width:${pct}%"></span></div></div>
+    <div class="sec-h">Needs review</div>`;
+  if(!review.length) html+=`<div class="empty">All caught up.</div>`;
+  review.forEach(b=>{ html+=`<div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <strong style="color:var(--evergreen-deep)">${b.from}</strong>
+      <span style="font-family:'Spline Sans Mono';font-weight:600;color:var(--evergreen-deep)">$${b.amt}</span></div>
+    <div style="font-size:12px;color:var(--walnut-soft);margin:2px 0 10px">${b.date}</div>
+    ${b.decoded?`<div class="xfrom">${b.raw}</div><div class="xto">${b.plain}</div>
+      <div class="btnrow" style="margin-top:10px"><button class="btn sm" onclick="toast('Marked paid · due date saved')">Looks right — pay $${b.amt}</button>
+      <button class="btn ghost sm" onclick="toast('Drafted a question to the billing office')">Looks wrong</button></div>`
+    :`<button class="btn sm" onclick="decode('${b.id}')">Decode this bill →</button>`}
+    </div>`;});
+  html+=`<div class="sec-h">Recent</div>`;
+  paid.forEach(b=>html+=row('✓',b.from,`${b.date} · paid`,"toast('Paid')",`$${b.amt}`));
+  html+=`<div class="note" style="margin-top:14px">Nori translates insurance jargon into plain English. Tap “Decode” on any bill.</div>`;
+  return html;
+}
+function decode(id){ const b=P().bills.find(x=>x.id===id); b.decoded=true; document.getElementById('body').innerHTML=billingV(); }
+
+function medsV(){ const p=P();
+  let html=`<button class="btn ghost sm" onclick="switchTab('more')" style="margin-bottom:8px">‹ More</button>
+    <h1 class="scr">Medications</h1><p class="sub">${p.meds.length} active · tap a toggle to mark taken or set reminders.</p>`;
+  p.meds.forEach(m=>{ html+=`<div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:baseline">
+      <strong style="color:var(--evergreen-deep);font-size:16px">${m.name} ${m.dose}</strong>
+      <span style="font-size:12px;color:${m.refill<=7?'#a85740':'var(--walnut-soft)'}">refill in ${m.refill}d</span></div>
+    <div style="font-size:13px;color:var(--walnut-soft);margin:3px 0 6px">${m.purpose}</div>
+    <div style="font-size:12.5px;margin-bottom:8px">🕐 ${m.sched}</div>
+    ${m.interact?`<div class="pill warn">⚠ ${m.interact}</div>`:''}
+    <div style="display:flex;align-items:center;gap:12px;margin-top:8px;padding-top:10px;border-top:1px solid var(--mist)">
+      <span style="font-size:13px;flex:1">Taken today</span>
+      <button class="tog ${m.taken?'on':''}" aria-label="Taken today" onclick="toggleMed('${m.id}','taken')"></button>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;margin-top:8px">
+      <span style="font-size:13px;flex:1">Refill reminder</span>
+      <button class="tog ${m.remind?'on':''}" aria-label="Refill reminder" onclick="toggleMed('${m.id}','remind')"></button>
+    </div></div>`;});
+  html+=`<div class="sec-h">Recently changed</div><div class="note">Furosemide 20 mg → 40 mg on Mar 9 (Dr. Osei).</div>`;
+  return html;
+}
+function toggleMed(id,key){ const m=P().meds.find(x=>x.id===id); m[key]=!m[key]; document.getElementById('body').innerHTML=medsV();
+  if(key==='taken'&&m.taken) toast(m.name+' marked taken'); }
+
+function apptsV(){ const p=P();
+  let html=`<button class="btn ghost sm" onclick="switchTab('more')" style="margin-bottom:8px">‹ More</button>
+    <h1 class="scr">Appointments</h1>`;
+  p.appts.forEach(a=>{ html+=`<div class="card">
+    <div style="font-size:12px;color:var(--clay);font-weight:700">${a.date} · ${a.when.split('·')[1]}</div>
+    <div style="font-family:Fraunces;font-size:19px;color:var(--evergreen-deep);margin:2px 0">${a.spec}</div>
+    <div style="font-size:13px;color:var(--walnut-soft)">${a.who} · ${a.mode}</div>
+    <div style="margin-top:8px">${a.ride?`<span class="pill">🚗 Ride: ${a.ride}</span>`:''}<span class="pill honey">📋 ${a.prep.length} prep questions</span></div>
+    <button class="btn ghost sm" style="width:100%;margin-top:8px" onclick="nav('apptDetail','${a.id}')">Open</button>
+    </div>`;});
+  if(p.followups) html+=`<div class="sec-h">To schedule</div>${row('📞','Follow-up labs','Ordered Mar 12',"toast('Scheduling helper (demo)')")}`;
+  return html;
+}
+function apptDetailV(){ const a=P().appts.find(x=>x.id===param);
+  return `<button class="btn ghost sm" onclick="nav('appts')" style="margin-bottom:8px">‹ Appointments</button>
+    <h1 class="scr">${a.spec}</h1><p class="sub">${a.who} · ${a.date} ${a.when.split('·')[1]} · ${a.mode}</p>
+    <div class="card"><div style="display:flex;align-items:center;gap:12px">
+      <div class="ic" style="background:var(--sage)">🚗</div>
+      <div class="tx" style="flex:1"><div class="t">Transportation</div><div class="d">${a.ride?'Assigned to '+a.ride:'Not assigned'}</div></div>
+      <button class="btn ghost sm" onclick="toast('Reassign ride (demo)')">Change</button></div></div>
+    <div class="sec-h">Prep questions</div>
+    <div class="card">${a.prep.map(q=>`<div style="padding:7px 0">☐ “${q}”</div>`).join('')}</div>
+    <button class="btn ghost sm" style="width:100%" onclick="nav('assistant')">✨ Ask Nori to prep more</button>
+    <button class="btn" style="margin-top:8px" onclick="toast('Added to your calendar')">Add to calendar</button>
+    ${a.mode==='Telehealth'?`<button class="btn ghost" style="margin-top:8px" onclick="toast('Joining telehealth… (demo)')">Join video visit</button>`:''}`;
+}
+
+function settingsV(){
+  return `<button class="btn ghost sm" onclick="switchTab('more')" style="margin-bottom:8px">‹ More</button>
+    <h1 class="scr">Settings & privacy</h1>
+    <div class="sec-h">Your role</div><div class="card"><strong>Organizer</strong> — full access. You can invite people, set roles, and view the audit log.</div>
+    <div class="sec-h">Privacy</div>
+    ${row('🔒','Roles & permissions','4 people · scoped access',"switchTab('care')")}
+    ${row('📝','Consent records','Who has access & why',"toast('Consent log (demo)')")}
+    ${row('📜','Audit log','Every access, logged',"toast('Audit log (demo)')")}
+    ${row('⬇️','Export records','FHIR-aligned download',"toast('Export started (demo)')")}
+    <div class="note guard" style="margin-top:14px">Nori is HIPAA-aligned: encrypted in transit and at rest, role-based access, and a full audit trail. Safety info is always free.</div>`;
+}
+
+function assistantV(){
+  const prompts=[
+    ['What should I watch for with heart failure?','watch'],
+    ['What does the $142 bill mean?','bill'],
+    ['What should I ask cardiology Thursday?','prep'],
+    ['Who do I call if his breathing gets worse?','call']];
+  let body=`<div class="disc">ⓘ <span>Nori explains and helps you prepare. It can’t diagnose, prescribe, or replace ${P().short}’s care team. In an emergency, call 911.</span></div>`;
+  if(!chat.length){
+    body+=`<div style="text-align:center;margin:10px 0 16px">${logo(54,{leaf:'#2F5D50',vein:'#C7D9CC'})}<div style="font-family:Fraunces;font-size:20px;color:var(--evergreen-deep);margin-top:6px">Ask Nori</div></div>
+      <div class="sec-h">Try asking</div>${prompts.map(p=>`<button class="row" onclick="ask('${p[1]}')"><div class="ic">✨</div><div class="tx"><div class="t" style="font-size:14px">${p[0]}</div></div><span class="car">›</span></button>`).join('')}`;
+  } else {
+    body+=`<div class="chat">`+chat.map(m=> m.role==='you'
+      ? `<div class="msg you">${m.text}</div>`
+      : `<div class="msg nori">${m.text}${m.src?`<div class="src">${m.src.map(s=>`<span class="srcchip">📎 ${s}</span>`).join('')}</div>`:''}</div>`).join('')+`</div>`;
+  }
+  return `<button class="btn ghost sm" onclick="switchTab('home')" style="margin-bottom:8px">‹ Home</button>
+    ${body}
+    <div class="composer"><input id="ask" placeholder="Ask about ${P().short}…" onkeydown="if(event.key==='Enter')askText()"><button class="send" onclick="askText()">➤</button></div>`;
+}
+const RESP={
+  watch:{text:`For ${'Robert'}’s heart failure, the main things to watch each day are his <b>weight</b> (same time, same scale), <b>swelling</b> in the ankles or legs, and how his <b>breathing</b> feels — especially lying down. A jump of 3+ lb over a few days or new breathlessness is worth a call to the care team. Severe breathlessness or chest pain means call 911.`,src:['Heart failure playbook','Robert’s record']},
+  bill:{text:`The $142 from St. Mary’s is a <b>coinsurance</b> amount — your insurance covered 80% of the Mar 12 visit, and this is the remaining 20% that’s yours. It matches that visit and doesn’t look like a duplicate. Want me to set a reminder for the due date?`,src:['Bill · St. Mary’s','Mar 12 visit']},
+  prep:{text:`Given the 2 lb weight gain you logged and the elevated BNP on Mar 12, three good questions for Dr. Osei: <b>1)</b> Is the weight gain something to act on now? <b>2)</b> Should the water pill (Furosemide) be adjusted? <b>3)</b> What weight should make me call before the next visit? I’ve saved these to Thursday’s appointment.`,src:['Heart failure playbook','Timeline · weight + BNP','Cardiology appt']},
+  call:{text:`If his breathing is a little worse but he’s comfortable at rest, start with cardiology — Dr. Osei’s office (tap to call in Care team). If he’s breathless <b>at rest</b>, can’t lie flat, or has chest pain, that’s a 911 situation, not a phone call. I can open Emergency Mode for you.`,src:['Heart failure playbook','Care team']},
+  fallback:{text:`I can help you understand the record, prepare for visits, and figure out who to contact — but I can’t diagnose or change medications. For anything urgent, the care team or 911 is the right call. Tell me a bit more about what you’re trying to do?`,src:['Nori guidance']},
+};
+function ask(key){ const q={watch:'What should I watch for with heart failure?',bill:'What does the $142 bill mean?',prep:'What should I ask cardiology Thursday?',call:'Who do I call if his breathing gets worse?'}[key];
+  chat.push({role:'you',text:q}); const r=RESP[key]||RESP.fallback; chat.push({role:'nori',text:r.text,src:r.src});
+  document.getElementById('body').innerHTML=assistantV(); scrollBody();
+}
+function askText(){ const el=document.getElementById('ask'); const v=(el.value||'').trim(); if(!v)return;
+  chat.push({role:'you',text:v}); const t=v.toLowerCase(); let key='fallback';
+  if(t.includes('bill')||t.includes('owe')||t.includes('142')) key='bill';
+  else if(t.includes('watch')||t.includes('weight')||t.includes('breath')&&!t.includes('call')) key='watch';
+  else if(t.includes('ask')||t.includes('cardio')||t.includes('question')) key='prep';
+  else if(t.includes('call')||t.includes('911')||t.includes('worse')) key='call';
+  const r=RESP[key]; chat.push({role:'nori',text:r.text,src:r.src});
+  document.getElementById('body').innerHTML=assistantV(); scrollBody();
+}
+function scrollBody(){ const b=document.getElementById('body'); if(b)b.scrollTop=b.scrollHeight; }
+
+/* ============ SHEETS ============ */
+function showSheet(html){ const s=document.getElementById('sheet'); s.innerHTML=`<div class="grab"></div>`+html;
+  document.getElementById('scrim').classList.add('show'); }
+function closeSheet(){ document.getElementById('scrim').classList.remove('show'); }
+
+function openSwitcher(){ showSheet(`<h3>Who are you caring for?</h3>
+  ${Object.values(DB).map(p=>`<button class="row" onclick="setPatient('${p.id}')"><div class="ic" style="background:var(--evergreen);color:#fff;font-family:Fraunces">${p.initials}</div><div class="tx"><div class="t">${p.short} · ${p.name}</div><div class="d">${p.relation} · ${p.conditions.length} conditions</div></div>${p.id===cur?'<span class="pill">current</span>':'<span class="car">›</span>'}</button>`).join('')}
+  <button class="btn ghost" style="margin-top:6px" onclick="closeSheet()">Close</button>`);}
+function setPatient(id){ cur=id; chat=[]; closeSheet(); switchTab('home'); }
+
+function openAdd(){ showSheet(`<h3>Add to ${P().short}’s record</h3>
+  <button class="row" onclick="symptomStart()"><div class="ic">📝</div><div class="tx"><div class="t">Log a symptom</div><div class="d">Weight, breathing, swelling…</div></div><span class="car">›</span></button>
+  <button class="row" onclick="closeSheet();nav('meds');toast('Add medication (demo)')"><div class="ic">💊</div><div class="tx"><div class="t">Add a medication</div></div><span class="car">›</span></button>
+  <button class="row" onclick="closeSheet();nav('appts');toast('Add appointment (demo)')"><div class="ic">🗓️</div><div class="tx"><div class="t">Add an appointment</div></div><span class="car">›</span></button>
+  <button class="row" onclick="closeSheet();nav('billing');toast('Snap or upload a bill (demo)')"><div class="ic">💲</div><div class="tx"><div class="t">Upload a bill</div></div><span class="car">›</span></button>`);}
+
+/* ---- symptom logging ---- */
+let sym={cond:null,weight:0,breath:0,swell:0,chest:false};
+function symptomStart(){ sym={cond:null,weight:0,breath:0,swell:0,chest:false};
+  const conds=P().conditions;
+  showSheet(`<h3>Log a symptom</h3><p class="sub" style="margin-bottom:8px">Which area?</p>
+    <div class="chips">${conds.map(c=>`<button class="chip" onclick="pickCond('${c.pb}')">${PLAYBOOKS[c.pb].name}</button>`).join('')}</div>`);
+}
+function pickCond(pb){ sym.cond=pb;
+  if(pb==='chf'){ renderCHFLog(); }
+  else { // generic note logger
+    showSheet(`<h3>${PLAYBOOKS[pb].name}</h3><p class="sub">How is ${P().short} doing today?</p>
+      <div class="chips" id="g">${['About the same','A little off','Noticeably worse'].map((l,i)=>`<button class="chip" onclick="genLog(${i},'${pb}')">${l}</button>`).join('')}</div>`);
+  }
+}
+function renderCHFLog(){ const sel=(g,i)=>sym[g]===i?'on':'';
+  showSheet(`<h3>Heart failure · quick log</h3>
+    <div class="sec-h" style="margin-top:6px">Weight change</div>
+    <div class="chips">${['No change','+1–2 lb','+3–4 lb','+5 lb or more'].map((l,i)=>`<button class="chip ${sel('weight',i)}" onclick="setSym('weight',${i})">${l}</button>`).join('')}</div>
+    <div class="sec-h">Breathing</div>
+    <div class="chips">${['Comfortable','Mildly short','Short at rest'].map((l,i)=>`<button class="chip ${sel('breath',i)}" onclick="setSym('breath',${i})">${l}</button>`).join('')}</div>
+    <div class="sec-h">Swelling</div>
+    <div class="chips">${['None','Mild','Marked'].map((l,i)=>`<button class="chip ${sel('swell',i)}" onclick="setSym('swell',${i})">${l}</button>`).join('')}</div>
+    <div style="display:flex;align-items:center;gap:10px;margin:12px 0">
+      <button class="tog ${sym.chest?'on':''}" onclick="setSym('chest',${!sym.chest})"></button>
+      <span style="font-size:13.5px">Chest pain or severe breathlessness</span></div>
+    <button class="btn" onclick="evalCHF()">Log & check</button>`);
+}
+function setSym(k,v){ sym[k]=v; if(sym.cond==='chf') renderCHFLog(); }
+function evalCHF(){
+  let zone='green';
+  const sev=Math.max(sym.weight>=3?3:sym.weight>=2?2:sym.weight>=1?1:0,
+                     sym.breath===2?3:sym.breath===1?1:0,
+                     sym.swell===2?2:sym.swell===1?1:0);
+  if(sym.chest) zone='emergency';
+  else if(sev>=3) zone='red';
+  else if(sev===2) zone='red';
+  else if(sev===1) zone='yellow';
+  else zone='green';
+  const pb=PLAYBOOKS.chf.zones;
+  const guide={green:pb.green,yellow:pb.yellow,red:pb.red,emergency:pb.emergency}[zone];
+  const head={green:'● On track',yellow:'● Worth watching',red:'● Call the care team today',emergency:'⚠ Call 911 now'}[zone];
+  const cls={green:'z-green',yellow:'z-yellow',red:'z-red',emergency:'z-emerg'}[zone];
+  // add to timeline + update status
+  const parts=[]; if(sym.weight) parts.push(['','+1–2 lb','+3–4 lb','+5 lb'][sym.weight]+' weight');
+  if(sym.swell) parts.push(['','mild','marked'][sym.swell]+' swelling');
+  if(sym.breath) parts.push(['','mild SOB','SOB at rest'][sym.breath]);
+  if(sym.chest) parts.push('chest pain');
+  const desc=parts.length?parts.join(' · '):'no new changes';
+  P().timeline[0].day='Today';
+  P().timeline[0].items.unshift({time:'now',type:'symptom',zone:zone==='emergency'?'red':zone,title:'Symptom logged',desc});
+  if(zone!=='green'){ P().status={zone:zone==='emergency'?'red':zone,label:head.replace('● ','').replace('⚠ ',''),meta:desc}; }
+  let extra='';
+  if(zone==='red') extra=`<button class="btn" style="margin-top:10px" onclick="closeSheet();switchTab('care')">📞 Call care team</button>`;
+  if(zone==='emergency') extra=`<button class="btn danger" style="margin-top:10px" onclick="openEmergency()">Open Emergency Mode</button>`;
+  showSheet(`<h3>Logged</h3>
+    <div class="zone ${cls}" style="margin-top:8px"><div class="zn">${head}</div><div class="zd">${guide}</div></div>
+    ${zone!=='green'?`<div class="sec-h">Suggested questions</div><div class="card">${PLAYBOOKS.chf.questions.map(q=>`<div style="padding:5px 0">“${q}”</div>`).join('')}</div>`:''}
+    ${extra}
+    <button class="btn ghost" style="margin-top:10px" onclick="closeSheet();switchTab('timeline')">View on timeline</button>`);
+}
+function genLog(i,pb){ const z=['green','yellow','red'][i]; const pbz=PLAYBOOKS[pb].zones;
+  const guide=[pbz.green,pbz.yellow,pbz.red][i];
+  const head=['● On track','● Worth watching','● Call the care team today'][i];
+  const cls=['z-green','z-yellow','z-red'][i];
+  P().timeline[0].items.unshift({time:'now',type:'symptom',zone:z,title:PLAYBOOKS[pb].name+' check',desc:['about the same','a little off','noticeably worse'][i]});
+  if(i>0) P().status={zone:z,label:head.replace('● ',''),meta:PLAYBOOKS[pb].name+' — '+['','a little off','noticeably worse'][i]};
+  showSheet(`<h3>Logged</h3><div class="zone ${cls}" style="margin-top:8px"><div class="zn">${head}</div><div class="zd">${guide}</div></div>
+    <button class="btn ghost" style="margin-top:10px" onclick="closeSheet();switchTab('timeline')">View on timeline</button>`);
+}
+
+function summarySheet(){ const p=P();
+  showSheet(`<h3>${p.name} — summary</h3>
+    <div class="card" style="font-size:13.5px;line-height:1.55">
+      <b>${p.name}</b>, ${p.age}, ${p.sex}. ${p.relation}.<br>
+      <b>Conditions:</b> ${p.conditions.map(c=>PLAYBOOKS[c.pb].name).join(', ')}.<br>
+      <b>Allergies:</b> ${p.allergies.join(', ')}.<br>
+      <b>Medications:</b> ${p.meds.map(m=>m.name+' '+m.dose).join(', ')}.<br>
+      <b>Care team:</b> ${p.team.filter(t=>t.phone).map(t=>t.name).join(', ')}.<br>
+      <b>Insurance:</b> ${p.insurance}.
+    </div>
+    <button class="btn" onclick="toast('Shared with provider (demo)')">Share with a provider</button>
+    <button class="btn ghost" style="margin-top:8px" onclick="closeSheet()">Close</button>`);
+}
+
+/* ============ EMERGENCY ============ */
+function emergency(){ const p=P();
+  return `<div class="full emerg"><div class="ehead"><div class="ti">⚕ EMERGENCY INFO</div><button class="x" onclick="closeEmergency()" aria-label="Close">✕</button></div>
+    <div class="ebody">
+      <div class="ecard"><div class="elab">Patient</div><div class="ebig">${p.name}</div><div>${p.age} · ${p.sex} · DOB ${p.dob} · ${p.code}</div></div>
+      <div class="ecard allergy"><div class="elab">Allergies</div><div class="ebig">⚠ ${p.allergies.join(', ').toUpperCase()}</div></div>
+      <div class="ecard"><div class="elab">Conditions</div><div>${p.conditions.map(c=>PLAYBOOKS[c.pb].name).join(' · ')}</div></div>
+      <div class="ecard"><div class="elab">Medications</div><div>${p.meds.map(m=>`${m.name} ${m.dose} (${m.sched.replace('1 tablet · ','')})`).join('<br>')}</div></div>
+      <div class="ecard"><div class="elab">Care team</div>
+        ${p.team.filter(t=>t.phone).map(t=>`<div class="call">${t.name} · ${t.role}<span class="ph" onclick="toast('Calling…')">📞 Call</span></div>`).join('')}</div>
+      <div class="ecard"><div class="elab">Insurance</div><div>${p.insurance}</div></div>
+      <div class="ecard"><div class="elab">Emergency contact</div><div class="call">Maria (daughter)<span class="ph" onclick="toast('Calling Maria…')">📞 Call</span></div></div>
+      <div class="btnrow" style="margin-top:6px"><button class="btn" style="background:#fff;color:var(--burgundy)" onclick="toast('Sharing packet…')">Share</button>
+      <button class="btn" style="background:rgba(255,255,255,.16)" onclick="toast('Sending to printer…')">Print</button></div>
+      <p style="text-align:center;font-size:11px;color:#f0c9c4;margin-top:14px">Works offline · readable at arm’s length</p>
+    </div></div>`;
+}
+function openEmergency(){ overlay='emergency'; paint(); }
+function closeEmergency(){ overlay=null; paint(); }
+
+/* ============ SPLASH & ONBOARDING ============ */
+function splash(){ return `<div class="full splash">
+  <div class="logo">${logo(104,{leaf:'#FBF8F4',vein:'#2F5D50'})}</div>
+  <h1>Nori</h1><div class="tag">Healthcare, organized for those who care.</div>
+  <button class="btn" onclick="enterApp()">Enter Nori</button>
+  <button class="btn" style="background:transparent;color:var(--sage);box-shadow:none;margin-top:6px" onclick="startOnboarding()">See how setup works</button>
+</div>`; }
+function enterApp(){ overlay=null; view='home'; paint(); }
+
+function startOnboarding(){ closeSheet(); overlay='onboarding'; onbStep=1; paint(); }
+function onboarding(){
+  const steps={
+    1:`<div class="step">STEP 1 OF 3</div><h2>Who are you caring for?</h2>
+       <input class="inp" value="Robert Delgado" readonly>
+       <input class="inp" value="Father" readonly>
+       <p class="sub" style="margin-top:6px">What’s hardest right now?</p>
+       <button class="opt on"><span class="oi">💲</span><span class="ot">Confusing medical bills</span></button>
+       <button class="opt"><span class="oi">💊</span><span class="ot">Managing medications</span></button>
+       <button class="opt"><span class="oi">🫀</span><span class="ot">A new diagnosis</span></button>`,
+    2:`<div class="step">STEP 2 OF 3</div><h2>Let’s get a quick start</h2>
+       <p class="sub">Pick one — you can add the rest anytime.</p>
+       <button class="opt"><span class="oi">📷</span><span class="ot">Snap a photo of a bill or med list</span></button>
+       <button class="opt on"><span class="oi">🫀</span><span class="ot">Add conditions (we’ll build playbooks)</span></button>
+       <button class="opt"><span class="oi">🔗</span><span class="ot">Connect a portal (coming soon)</span></button>`,
+    3:`<div class="step">YOU’RE SET</div><h2>Robert’s care, in one place.</h2>
+       <p class="sub">We’ve set up his profile, a heart-failure playbook, and his emergency packet. Here’s what we found needs you first.</p>
+       <div class="card">⏰ Furosemide refill due in 4 days<br>💲 A $142 bill to review</div>`,
+  };
+  return `<div class="full onb"><div class="top">${logo(38,{leaf:'#2F5D50',vein:'#C7D9CC'})}</div>
+    <div class="body" style="padding:18px 22px">${steps[onbStep]}</div>
+    <div style="padding:14px 22px calc(18px + env(safe-area-inset-bottom))">
+      <button class="btn" onclick="${onbStep<3?`onbNext()`:`enterApp()`}">${onbStep<3?'Continue':'Open Nori'}</button>
+      ${onbStep===1?`<button class="btn ghost" style="margin-top:8px" onclick="enterApp()">Skip — explore the demo</button>`:''}
+    </div></div>`;
+}
+function onbNext(){ onbStep++; paint(); }
+
+/* ============ TOAST ============ */
+let toastT;
+function toast(msg){ let el=document.getElementById('toast');
+  if(!el){ el=document.createElement('div'); el.id='toast';
+    el.style.cssText='position:absolute;bottom:92px;left:50%;transform:translateX(-50%);background:var(--evergreen-deep);color:#fff;padding:11px 18px;border-radius:14px;font-size:13px;font-weight:600;z-index:90;box-shadow:var(--sh-md);max-width:80%;text-align:center;opacity:0;transition:opacity .2s';
+    VP.appendChild(el); }
+  el.textContent=msg; el.style.opacity='1'; clearTimeout(toastT);
+  toastT=setTimeout(()=>{el.style.opacity='0';},2200);
+}
+
+/* ============ INIT ============ */
+paint();
+</script>
+</body>
+</html>
